@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ include "waivatar.fullname" . }}-mcp"
+spec:
+  selector:
+    app: "{{ include "waivatar.fullname" . }}-mcp"
+  ports:
+    - port: {{ .Values.mcp.port }}
+      targetPort: {{ .Values.mcp.port }}
+      protocol: TCP
+      name: http

@@ -1,0 +1,66 @@
+{
+  "manifest_version": "0.4",
+  "name": "waivatar",
+  "version": "0.1.0",
+  "display_name": "Waivatar",
+  "description": "Avatar wiki knowledge base for James Cameron's Avatar universe. Search lore, characters, locations, creatures, and technology via RAG.",
+  "long_description": "Waivatar is a Waisuite MCP server that gives Claude deep knowledge of James Cameron's Avatar universe. Powered by RAG over the Avatar fandom wiki, it exposes tools to search for lore, retrieve full articles, and browse topics. Requires a running Qdrant instance populated with the Avatar wiki data.",
+  "author": {
+    "name": "Waisuite",
+    "email": "contact@waisuite.com",
+    "url": "https://waisuite.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/waisuite/waivatar"
+  },
+  "support": "https://github.com/waisuite/waivatar/issues",
+  "server": {
+    "type": "python",
+    "entry_point": "app/mcp_server.py",
+    "mcp_config": {
+      "command": "python3",
+      "args": ["${__dirname}/app/mcp_server.py", "stdio"],
+      "env": {
+        "OPENAI_API_KEY": "${user_config.openai_api_key}",
+        "OPENAI_MODEL": "text-embedding-3-small",
+        "QDRANT_URL": "${user_config.qdrant_url}"
+      }
+    }
+  },
+  "user_config": {
+    "openai_api_key": {
+      "type": "string",
+      "title": "OpenAI API Key",
+      "description": "Your OpenAI API key for embeddings.",
+      "sensitive": true,
+      "required": true
+    },
+    "qdrant_url": {
+      "type": "string",
+      "title": "Qdrant URL",
+      "description": "URL of your running Qdrant instance.",
+      "default": "http://localhost:6333"
+    }
+  },
+  "tools": [
+    {
+      "name": "search_avatar_wiki",
+      "description": "Search the Avatar wiki for lore, characters, locations, creatures, technology, factions, and events."
+    },
+    {
+      "name": "get_article",
+      "description": "Retrieve a full Avatar wiki article by exact title."
+    },
+    {
+      "name": "list_articles",
+      "description": "List article titles, optionally filtered by a prefix."
+    }
+  ],
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "python": ">3.8"
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{{- if .Values.qdrant.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ include "waivatar.fullname" . }}-qdrant"
+spec:
+  selector:
+    app: "{{ include "waivatar.fullname" . }}-qdrant"
+  ports:
+    - port: {{ .Values.qdrant.port }}
+      targetPort: {{ .Values.qdrant.port }}
+      protocol: TCP
+      name: http
+{{- end }}

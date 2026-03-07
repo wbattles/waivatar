@@ -1,0 +1,40 @@
+image:
+  data:
+    repository: your-registry/waivatar-data
+    tag: latest
+  mcp:
+    repository: your-registry/waivatar-mcp
+    tag: latest
+
+qdrant:
+  enabled: true
+  image: qdrant/qdrant
+  tag: latest
+  port: 6333
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: ""
+
+mcp:
+  replicas: 1
+  port: 8080
+  openai:
+    model: text-embedding-3-small
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+  host: mcp.example.com
+  tls:
+    enabled: false
+    secretName: ""
+
+secrets:
+  openaiApiKey: ""
+  qdrantApiKey: ""
+
+job:
+  backoffLimit: 4

@@ -1,0 +1,42 @@
+{{- if .Values.qdrant.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ include "waivatar.fullname" . }}-qdrant"
+  labels:
+    app: "{{ include "waivatar.fullname" . }}-qdrant"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "{{ include "waivatar.fullname" . }}-qdrant"
+  template:
+    metadata:
+      labels:
+        app: "{{ include "waivatar.fullname" . }}-qdrant"
+    spec:
+      containers:
+        - name: qdrant
+          image: "{{ .Values.qdrant.image }}:{{ .Values.qdrant.tag }}"
+          ports:
+            - containerPort: {{ .Values.qdrant.port }}
+          {{- if .Values.secrets.qdrantApiKey }}
+          env:
+            - name: QDRANT__SERVICE__API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "waivatar.fullname" . }}-secret
+                  key: qdrantApiKey
+          {{- end }}
+          {{- if .Values.qdrant.persistence.enabled }}
+          volumeMounts:
+            - name: qdrant-data
+              mountPath: /qdrant/storage
+          {{- end }}
+      {{- if .Values.qdrant.persistence.enabled }}
+      volumes:
+        - name: qdrant-data
+          persistentVolumeClaim:
+            claimName: "{{ include "waivatar.fullname" . }}-qdrant"
+      {{- end }}
+{{- end }}

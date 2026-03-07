@@ -1,0 +1,43 @@
+# Dependencies and environments
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Data files (too large to bundle)
+data/
+*.jsonl
+
+# Helm / k8s deployment files
+chart/
+helm/
+deploy/
+*.yaml
+*.yml
+
+# Docker
+Dockerfile
+Dockerfile.*
+docker-compose.yml
+
+# Dev tools
+.git/
+.gitignore
+tests/
+test/
+*.test.py
+
+# Docs
+README.md
+*.md
+
+# Misc
+.env
+.env.example
+.DS_Store
+
+# Custom
+local.sh
+test.py
+requirements.txt
+qdrant_storage/

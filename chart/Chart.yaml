@@ -1,0 +1,6 @@
+apiVersion: v2
+name: waivatar
+description: Helm chart for waivatar — Avatar wiki RAG MCP server with Qdrant
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
