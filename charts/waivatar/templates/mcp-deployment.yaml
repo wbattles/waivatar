@@ -33,14 +33,12 @@ spec:
             - name: MCP_PORT
               value: "{{ .Values.mcp.port }}"
           readinessProbe:
-            httpGet:
-              path: /mcp
+            tcpSocket:
               port: {{ .Values.mcp.port }}
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
-            httpGet:
-              path: /mcp
+            tcpSocket:
               port: {{ .Values.mcp.port }}
             initialDelaySeconds: 10
             periodSeconds: 30
