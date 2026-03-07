@@ -37,4 +37,5 @@ secrets:
   qdrantApiKey: ""
 
 job:
-  backoffLimit: 4
+  backoffLimit: 10
+  activeDeadlineSeconds: 1800
