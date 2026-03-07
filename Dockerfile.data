@@ -5,7 +5,8 @@ RUN pip install --no-cache-dir qdrant-client openai python-dotenv
 ARG CHUNKS_URL=https://waivatar.s3.us-east-1.amazonaws.com/avatar_chunks.jsonl
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /data \
-    && curl -L $CHUNKS_URL -o /data/avatar_chunks.jsonl
+    && mkdir -p /app \
+    && curl -L $CHUNKS_URL -o /app/avatar_chunks.jsonl
 
 COPY data/embed_data.py /app/embed_data.py
 WORKDIR /app
