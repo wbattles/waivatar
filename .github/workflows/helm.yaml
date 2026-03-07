@@ -6,9 +6,9 @@ on:
       - main
       - test
     paths:
-      - chart/templates/**
-      - chart/values.yaml
-      - chart/Chart.yaml
+      - charts/waivatar/templates/**
+      - charts/waivatar/values.yaml
+      - charts/waivatar/Chart.yaml
       - .github/workflows/helm.yaml
 
 jobs:

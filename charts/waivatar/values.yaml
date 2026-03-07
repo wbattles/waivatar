@@ -1,9 +1,9 @@
 image:
   data:
-    repository: your-registry/waivatar-data
+    repository: ghcr.io/wbattles/waivatar-data
     tag: latest
   mcp:
-    repository: your-registry/waivatar-mcp
+    repository: ghcr.io/wbattles/waivatar-mcp
     tag: latest
 
 qdrant:
