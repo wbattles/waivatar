@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ include "waivatar.fullname" . }}-data-pipeline"
+  labels:
+    app.kubernetes.io/name: "{{ include "waivatar.name" . }}"
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: {{ .Values.job.backoffLimit }}
+  activeDeadlineSeconds: {{ .Values.job.activeDeadlineSeconds }}
+  template:
+    spec:
+      containers:
+        - name: data-pipeline
+          image: "{{ .Values.image.data.repository }}:{{ .Values.image.data.tag }}"
+          imagePullPolicy: Always
+          env:
+            - name: QDRANT_URL
+              value: "http://{{ include "waivatar.fullname" . }}-qdrant:{{ .Values.qdrant.port }}"
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "waivatar.fullname" . }}-secret
+                  key: openaiApiKey
+            - name: OPENAI_MODEL
+              value: "{{ .Values.mcp.openai.model }}"
+      restartPolicy: OnFailure

@@ -1,0 +1,5 @@
+mcp[cli]
+openai
+qdrant-client
+python-dotenv
+fastmcp

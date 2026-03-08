@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "{{ include "waivatar.fullname" . }}-mcp"
+  labels:
+    app: "{{ include "waivatar.fullname" . }}-mcp"
+spec:
+  replicas: {{ .Values.mcp.replicas }}
+  selector:
+    matchLabels:
+      app: "{{ include "waivatar.fullname" . }}-mcp"
+  template:
+    metadata:
+      labels:
+        app: "{{ include "waivatar.fullname" . }}-mcp"
+    spec:
+      containers:
+        - name: mcp
+          image: "{{ .Values.image.mcp.repository }}:{{ .Values.image.mcp.tag }}"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: {{ .Values.mcp.port }}
+          env:
+            - name: QDRANT_URL
+              value: "http://{{ include "waivatar.fullname" . }}-qdrant:{{ .Values.qdrant.port }}"
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "waivatar.fullname" . }}-secret
+                  key: openaiApiKey
+            - name: OPENAI_MODEL
+              value: "{{ .Values.mcp.openai.model }}"
+            - name: MCP_PORT
+              value: "{{ .Values.mcp.port }}"
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.mcp.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.mcp.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 30
