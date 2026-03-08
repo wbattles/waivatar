@@ -2,9 +2,7 @@
 waivatar — FastMCP Server
 Exposes Avatar wiki RAG as MCP tools via FastMCP.
 
-Hosted mode: clients pass their OpenAI key via X-OpenAI-Key header.
-Local/stdio mode: falls back to OPENAI_API_KEY env var.
-
+The server uses the OPENAI_API_KEY env var set by the deployer.
 Clients connect over streamable-http (hosted) or stdio (local).
 """
 
@@ -15,7 +13,6 @@ from openai import OpenAI
 from qdrant_client import QdrantClient
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 import fastmcp
-from fastmcp.server.dependencies import get_http_request
 
 load_dotenv()
 
@@ -26,8 +23,7 @@ COLLECTION_NAME = "avatar_wiki"
 TOP_K = 5
 OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "text-embedding-3-small")
 
-# Fallback key for local/stdio use
-OPENAI_API_KEY_FALLBACK = os.environ.get("OPENAI_API_KEY", "")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
 # ── Qdrant client ─────────────────────────────────────────────────────────────
 
@@ -35,28 +31,15 @@ qdrant = QdrantClient(url=QDRANT_URL)
 
 # ── Embedding ─────────────────────────────────────────────────────────────────
 
-def embed(text: str, api_key: str) -> list[float]:
-    """Embed a query string using the provided OpenAI API key."""
-    if not api_key:
-        raise RuntimeError(
-            "No OpenAI API key provided. "
-            "Pass your key via the X-OpenAI-Key header or set OPENAI_API_KEY env var."
-        )
-    client = OpenAI(api_key=api_key)
-    response = client.embeddings.create(model=OPENAI_MODEL, input=[text])
+openai_client = OpenAI(api_key=OPENAI_API_KEY)
+
+
+def embed(text: str) -> list[float]:
+    """Embed a query string using the server's OpenAI API key."""
+    if not OPENAI_API_KEY:
+        raise RuntimeError("No OpenAI API key configured. Set the OPENAI_API_KEY env var.")
+    response = openai_client.embeddings.create(model=OPENAI_MODEL, input=[text])
     return response.data[0].embedding
-
-
-def get_api_key() -> str:
-    """Get OpenAI key from request header, falling back to env var for stdio."""
-    try:
-        request = get_http_request()
-        key = request.headers.get("x-openai-key", "")
-        if key:
-            return key
-    except Exception:
-        pass
-    return OPENAI_API_KEY_FALLBACK
 
 
 # ── MCP Server ────────────────────────────────────────────────────────────────
@@ -84,8 +67,7 @@ def search_avatar_wiki(query: str, top_k: int = TOP_K) -> str:
         top_k:  Number of results to return (default 5, max 10).
     """
     top_k = min(top_k, 10)
-    api_key = get_api_key()
-    vector = embed(query, api_key)
+    vector = embed(query)
 
     results = qdrant.query_points(
         collection_name=COLLECTION_NAME,

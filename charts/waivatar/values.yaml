@@ -34,7 +34,7 @@ ingress:
 
 secrets:
   openaiApiKey: ""
-  qdrantApiKey: ""
+  # qdrantApiKey: ""
 
 job:
   backoffLimit: 10
