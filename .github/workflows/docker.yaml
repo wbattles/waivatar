@@ -53,7 +53,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}
           tags: |
             type=raw,value=latest
-            type=raw,value=build-${{ github.run_number }}
+            type=raw,value=${{ github.run_number }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5

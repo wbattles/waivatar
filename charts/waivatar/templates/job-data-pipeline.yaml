@@ -16,7 +16,7 @@ spec:
       containers:
         - name: data-pipeline
           image: "{{ .Values.image.data.repository }}:{{ .Values.image.data.tag }}"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           env:
             - name: QDRANT_URL
               value: "http://{{ include "waivatar.fullname" . }}-qdrant:{{ .Values.qdrant.port }}"

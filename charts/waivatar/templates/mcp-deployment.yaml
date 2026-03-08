@@ -17,7 +17,7 @@ spec:
       containers:
         - name: mcp
           image: "{{ .Values.image.mcp.repository }}:{{ .Values.image.mcp.tag }}"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: {{ .Values.mcp.port }}
           env:
