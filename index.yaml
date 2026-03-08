@@ -3,6 +3,16 @@ entries:
   waivatar:
   - apiVersion: v2
     appVersion: 0.1.0
+    created: "2026-03-08T01:39:09.726118206Z"
+    description: Helm chart for waivatar — Avatar wiki RAG MCP server with Qdrant
+    digest: 4eb23003c2aa57eed93deb025cbc0762029855b94117faca6c6215b432d1f13e
+    name: waivatar
+    type: application
+    urls:
+    - https://github.com/wbattles/waivatar/releases/download/waivatar-0.1.4/waivatar-0.1.4.tgz
+    version: 0.1.4
+  - apiVersion: v2
+    appVersion: 0.1.0
     created: "2026-03-08T00:26:33.305078907Z"
     description: Helm chart for waivatar — Avatar wiki RAG MCP server with Qdrant
     digest: 0b39fd0fe6a3b3755c50c64bd58f099a2bb7dc8e449852018b0e5c8710e029b8
@@ -41,4 +51,4 @@ entries:
     urls:
     - https://github.com/wbattles/waivatar/releases/download/waivatar-0.1.0/waivatar-0.1.0.tgz
     version: 0.1.0
-generated: "2026-03-08T00:26:33.305094947Z"
+generated: "2026-03-08T01:39:09.726138444Z"
