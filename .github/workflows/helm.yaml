@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - test
     paths:
       - charts/waivatar/templates/**
       - charts/waivatar/values.yaml
