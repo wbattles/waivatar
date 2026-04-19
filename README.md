@@ -1,5 +1,7 @@
 ## Waivatar
 
+[![Casino funds](https://img.shields.io/badge/Casino_funds-Ko--fi-ff5f5f?logo=ko-fi&logoColor=white)](https://ko-fi.com/wbattles)
+
 Avatar universe knowledge base exposed as an MCP server. Search lore, characters, locations, creatures, and technology from James Cameron's Avatar films via RAG over the Avatar fandom wiki.
 
 ## Tools
