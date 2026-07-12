@@ -1,3 +1,4 @@
 avatar_chunks.jsonl
 qdrant_storage
 *.mcpb
+___pycache__

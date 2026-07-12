@@ -20,14 +20,6 @@ spec:
           image: "{{ .Values.qdrant.image }}:{{ .Values.qdrant.tag }}"
           ports:
             - containerPort: {{ .Values.qdrant.port }}
-          {{- if .Values.secrets.qdrantApiKey }}
-          env:
-            - name: QDRANT__SERVICE__API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "waivatar.fullname" . }}-secret
-                  key: qdrantApiKey
-          {{- end }}
           {{- if .Values.qdrant.persistence.enabled }}
           volumeMounts:
             - name: qdrant-data
