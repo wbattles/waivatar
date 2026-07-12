@@ -6,6 +6,7 @@ or set QDRANT_URL to target a running instance directly.
 """
 
 import json
+import hashlib
 import os
 import time
 
@@ -28,6 +29,7 @@ OPENAI_MODEL   = os.environ.get("OPENAI_MODEL", "text-embedding-3-small")
 
 QDRANT_PATH = "./qdrant_storage"
 QDRANT_URL  = os.environ.get("QDRANT_URL")
+RESET_COLLECTION = os.environ.get("RESET_COLLECTION", "").lower() in {"1", "true", "yes"}
 
 # ── Embedding ─────────────────────────────────────────────────────────────────
 
@@ -49,6 +51,11 @@ else:
 # ── Create collection if needed ───────────────────────────────────────────────
 
 existing = [c.name for c in qdrant.get_collections().collections]
+
+if RESET_COLLECTION and COLLECTION_NAME in existing:
+    qdrant.delete_collection(collection_name=COLLECTION_NAME)
+    existing.remove(COLLECTION_NAME)
+    print(f"Reset collection  : {COLLECTION_NAME}")
 
 if COLLECTION_NAME not in existing:
     qdrant.create_collection(
@@ -72,24 +79,43 @@ with open(INPUT_FILE, "r", encoding="utf-8") as f:
 print(f"Loaded {len(chunks)} chunks.")
 
 def chunk_id_to_int(chunk_id: str) -> int:
-    return abs(hash(chunk_id)) % (2**63)
+    digest = hashlib.sha256(chunk_id.encode("utf-8")).digest()
+    return int.from_bytes(digest[:8], byteorder="big") & ((1 << 63) - 1)
 
-# Skip already-stored chunks (safe to re-run)
-existing_ids: set = set()
+def text_hash(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+# Skip unchanged chunks and upsert chunks whose text changed at a stable ID.
+existing_hashes_by_id: dict = {}
 try:
-    scroll_result, _ = qdrant.scroll(
-        collection_name=COLLECTION_NAME,
-        limit=100_000,
-        with_payload=False,
-        with_vectors=False,
-    )
-    existing_ids = {p.id for p in scroll_result}
-    if existing_ids:
-        print(f"Already stored: {len(existing_ids)} — skipping those.")
+    offset = None
+    while True:
+        scroll_result, offset = qdrant.scroll(
+            collection_name=COLLECTION_NAME,
+            limit=10_000,
+            offset=offset,
+            with_payload=["text", "text_hash"],
+            with_vectors=False,
+        )
+        for point in scroll_result:
+            payload = point.payload or {}
+            stored_text_hash = payload.get("text_hash")
+            if stored_text_hash is None and payload.get("text"):
+                stored_text_hash = text_hash(payload["text"])
+            if stored_text_hash:
+                existing_hashes_by_id[point.id] = stored_text_hash
+        if offset is None:
+            break
+    if existing_hashes_by_id:
+        print(f"Existing vectors : {len(existing_hashes_by_id)}")
 except Exception:
     pass
 
-chunks_to_embed = [c for c in chunks if chunk_id_to_int(c["id"]) not in existing_ids]
+chunks_to_embed = [
+    c for c in chunks
+    if existing_hashes_by_id.get(chunk_id_to_int(c["id"])) != text_hash(c["text"])
+]
+print(f"Already current   : {len(chunks) - len(chunks_to_embed)}")
 print(f"Chunks to embed    : {len(chunks_to_embed)}")
 
 if not chunks_to_embed:
@@ -121,6 +147,7 @@ for i in range(0, total, BATCH_SIZE):
                 "title":       chunk["title"],
                 "chunk_index": chunk["chunk_index"],
                 "word_count":  chunk["word_count"],
+                "text_hash":   text_hash(chunk["text"]),
                 "text":        chunk["text"],
             },
         )

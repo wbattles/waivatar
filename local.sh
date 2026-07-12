@@ -13,6 +13,7 @@ docker run -d \
 # Uncomment to re-ingest/re-embed:
 # python data/ingest_wiki.py
 # OPENAI_API_KEY=${OPENAI_API_KEY} QDRANT_URL=http://localhost:6333 python data/embed_data.py
+# RESET_COLLECTION=true OPENAI_API_KEY=${OPENAI_API_KEY} QDRANT_URL=http://localhost:6333 python data/embed_data.py
 
 echo "Packing .mcpb..."
 mcpb pack

@@ -52,8 +52,8 @@ helm install waivatar oci://ghcr.io/wbattles/waivatar --version 0.1.0 \
 | `ingress.enabled` | `false` | Enable ingress |
 | `ingress.host` | `mcp.example.com` | Ingress hostname |
 | `secrets.openaiApiKey` | `""` | OpenAI API key |
-| `secrets.qdrantApiKey` | `""` | Qdrant API key (optional) |
-| `job.backoffLimit` | `4` | Data pipeline job retry limit |
+| `job.backoffLimit` | `10` | Data pipeline job retry limit |
+| `job.resetCollection` | `false` | Delete and recreate the Qdrant collection before embedding |
 
 ## Notes
 
