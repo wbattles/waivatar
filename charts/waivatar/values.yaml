@@ -1,10 +1,10 @@
 image:
   data:
     repository: ghcr.io/wbattles/waivatar-data
-    tag: latest
+    tag: v0.1.0
   mcp:
     repository: ghcr.io/wbattles/waivatar-mcp
-    tag: latest
+    tag: v0.1.0
 
 qdrant:
   enabled: true
@@ -34,8 +34,8 @@ ingress:
 
 secrets:
   openaiApiKey: ""
-  # qdrantApiKey: ""
 
 job:
   backoffLimit: 10
   activeDeadlineSeconds: 1800
+  resetCollection: false

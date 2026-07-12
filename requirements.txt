@@ -3,3 +3,5 @@ openai
 qdrant-client
 python-dotenv
 fastmcp
+requests
+mwparserfromhell

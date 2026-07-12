@@ -81,6 +81,13 @@ helm install waivatar charts/waivatar \
 | `OPENAI_MODEL` | `text-embedding-3-small` | Embedding model to use. |
 | `QDRANT_URL` | `http://localhost:6333` | Qdrant instance URL. |
 | `MCP_PORT` | `8080` | Port for streamable HTTP transport. |
+| `RESET_COLLECTION` | `false` | When running `data/embed_data.py`, delete and recreate the Qdrant collection before embedding. |
+
+## Refreshing Data
+
+Rerunning `data/embed_data.py` now uses deterministic Qdrant point IDs, so unchanged chunks are skipped reliably and changed chunks are upserted at stable IDs.
+
+For a full rebuild that removes old/stale points, run the embed step with `RESET_COLLECTION=true`.
 
 ## License
 

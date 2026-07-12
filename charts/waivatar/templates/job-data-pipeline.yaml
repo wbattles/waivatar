@@ -5,7 +5,7 @@ metadata:
   labels:
     app.kubernetes.io/name: "{{ include "waivatar.name" . }}"
   annotations:
-    "helm.sh/hook": post-install
+    "helm.sh/hook": post-install,post-upgrade
     "helm.sh/hook-weight": "-5"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
@@ -27,4 +27,8 @@ spec:
                   key: openaiApiKey
             - name: OPENAI_MODEL
               value: "{{ .Values.mcp.openai.model }}"
+            {{- if .Values.job.resetCollection }}
+            - name: RESET_COLLECTION
+              value: "true"
+            {{- end }}
       restartPolicy: OnFailure
