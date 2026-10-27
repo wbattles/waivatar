@@ -1,0 +1,35 @@
+{{- if .Values.sync.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: "{{ include "waivatar.fullname" . }}-sync"
+  labels:
+    app.kubernetes.io/name: "{{ include "waivatar.name" . }}"
+spec:
+  schedule: {{ .Values.sync.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .Values.sync.backoffLimit }}
+      activeDeadlineSeconds: {{ .Values.sync.activeDeadlineSeconds }}
+      template:
+        spec:
+          containers:
+            - name: sync
+              image: "{{ .Values.image.data.repository }}:{{ .Values.image.data.tag }}"
+              imagePullPolicy: Always
+              command: ["python", "sync_wiki.py"]
+              env:
+                - name: QDRANT_URL
+                  value: "http://{{ include "waivatar.fullname" . }}-qdrant:{{ .Values.qdrant.port }}"
+                - name: OPENAI_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ include "waivatar.fullname" . }}-secret
+                      key: openaiApiKey
+                - name: OPENAI_MODEL
+                  value: "{{ .Values.mcp.openai.model }}"
+          restartPolicy: OnFailure
+{{- end }}

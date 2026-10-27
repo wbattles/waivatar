@@ -1,7 +1,10 @@
 image:
   data:
     repository: ghcr.io/wbattles/waivatar-data
-    tag: v0.1.0
+    # The data image carries a snapshot of the wiki that is refreshed monthly
+    # by CI and published as snapshot-YYYY-MM-DD and latest. Pin a snapshot
+    # tag if you need reproducible installs.
+    tag: latest
   mcp:
     repository: ghcr.io/wbattles/waivatar-mcp
     tag: v0.1.0
@@ -35,7 +38,36 @@ ingress:
 secrets:
   openaiApiKey: ""
 
+# Data pipeline Job. Runs as a Helm hook on every install and upgrade: it
+# pulls the data image (imagePullPolicy Always, so `latest` picks up the
+# newest monthly snapshot), loads the snapshot into Qdrant, and then, if
+# syncOnInstall is true, runs an incremental sync against the live wiki so
+# the deployment is current on day one rather than as of the snapshot.
 job:
   backoffLimit: 10
   activeDeadlineSeconds: 1800
   resetCollection: false
+  syncOnInstall: true
+
+# In-cluster sync CronJob. Compares every wiki page's latest revision ID with
+# what Qdrant holds, refetches only changed pages, re-embeds only changed
+# chunks, and deletes pages that were removed. A run on an up-to-date index
+# is about six API list calls and no OpenAI calls.
+#
+# How fresh is the data without this?
+#   The index is refreshed whenever the pipeline Job runs, which is on
+#   `helm install` and `helm upgrade` only. Restarting the MCP pod does NOT
+#   re-run the pipeline. So with the CronJob off, the data is as fresh as
+#   your last upgrade plus the sync that ran during it, and new installs get
+#   the latest monthly snapshot brought current by syncOnInstall.
+#
+# When to enable it:
+#   If you upgrade rarely and want the index to track wiki edits on its own.
+#   The wiki sees a few dozen article edits a month, so weekly is plenty and
+#   daily is harmless. Each run embeds only the chunks whose text changed,
+#   so OpenAI cost is proportional to wiki activity, not index size.
+sync:
+  enabled: false
+  schedule: "0 4 * * 0"   # weekly, Sunday 04:00 cluster time
+  backoffLimit: 3
+  activeDeadlineSeconds: 1800

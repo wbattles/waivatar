@@ -11,6 +11,16 @@ on:
       - requirements.txt
       - VERSION
       - .github/workflows/docker.yaml
+  workflow_call:
+    inputs:
+      ref:
+        description: Commit to build. Defaults to the triggering commit.
+        type: string
+        default: ""
+      data_only:
+        description: Build and publish only the data image.
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -20,22 +30,39 @@ env:
   REGISTRY: ghcr.io
 
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+    steps:
+      - id: plan
+        run: |
+          data='{"image":"waivatar-data","dockerfile":"Dockerfile.data"}'
+          mcp='{"image":"waivatar-mcp","dockerfile":"Dockerfile.mcp"}'
+          if [ "${{ inputs.data_only }}" = "true" ]; then
+            echo "matrix={\"include\":[$data]}" >> "$GITHUB_OUTPUT"
+          else
+            echo "matrix={\"include\":[$mcp,$data]}" >> "$GITHUB_OUTPUT"
+          fi
+
   build-and-publish:
+    needs: plan
     runs-on: ubuntu-latest
     strategy:
-      matrix:
-        include:
-          - image: waivatar-mcp
-            dockerfile: Dockerfile.mcp
-          - image: waivatar-data
-            dockerfile: Dockerfile.data
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
 
       - name: Read version
         id: version
         run: echo "version=$(cat VERSION)" >> "$GITHUB_OUTPUT"
+
+      - name: Read snapshot date
+        id: snapshot
+        run: echo "date=$(jq -r .generated_at data/SNAPSHOT | cut -c1-10)" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU (for cross-arch builds)
         uses: docker/setup-qemu-action@v3
@@ -57,6 +84,7 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ matrix.image }}
           tags: |
             type=raw,value=v${{ steps.version.outputs.version }}
+            type=raw,value=snapshot-${{ steps.snapshot.outputs.date }},enable=${{ matrix.image == 'waivatar-data' }}
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
