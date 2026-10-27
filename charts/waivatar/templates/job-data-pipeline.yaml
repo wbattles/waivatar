@@ -17,6 +17,11 @@ spec:
         - name: data-pipeline
           image: "{{ .Values.image.data.repository }}:{{ .Values.image.data.tag }}"
           imagePullPolicy: Always
+          {{- if .Values.job.syncOnInstall }}
+          command: ["sh", "-c", "python embed_data.py && python sync_wiki.py"]
+          {{- else }}
+          command: ["python", "embed_data.py"]
+          {{- end }}
           env:
             - name: QDRANT_URL
               value: "http://{{ include "waivatar.fullname" . }}-qdrant:{{ .Values.qdrant.port }}"

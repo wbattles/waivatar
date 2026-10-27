@@ -1,0 +1,87 @@
+# Monthly wiki snapshot refresh.
+#
+# Re-ingests the Avatar wiki, commits the new gzipped chunk snapshot if it
+# changed, and publishes a fresh data image tagged snapshot-YYYY-MM-DD and
+# latest. The snapshot only bootstraps new installs; a running deployment
+# converges on the live wiki via sync_wiki.py regardless of snapshot age.
+#
+# Monthly keeps image churn low while keeping a new install's first sync
+# small. Trigger manually with workflow_dispatch to refresh sooner.
+
+name: waivatar data refresh
+
+on:
+  schedule:
+    - cron: "0 6 1 * *"   # 06:00 UTC on the 1st of every month
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.commit.outputs.changed }}
+      sha: ${{ steps.commit.outputs.sha }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install ingest dependencies
+        run: pip install requests mwparserfromhell
+
+      - name: Record previous snapshot size
+        id: before
+        run: echo "chunks=$(jq -r .chunks data/SNAPSHOT)" >> "$GITHUB_OUTPUT"
+
+      - name: Ingest wiki
+        run: python data/ingest_wiki.py
+
+      - name: Sanity check snapshot
+        # A partial API outage can produce a much smaller snapshot. Refuse to
+        # publish one that lost more than 10% of its chunks.
+        run: |
+          before=${{ steps.before.outputs.chunks }}
+          after=$(jq -r .chunks data/SNAPSHOT)
+          echo "chunks before=$before after=$after"
+          if [ "$after" -lt $(( before * 9 / 10 )) ]; then
+            echo "::error::snapshot shrank from $before to $after chunks; not publishing"
+            exit 1
+          fi
+
+      - name: Commit snapshot
+        id: commit
+        run: |
+          if git diff --quiet -- data/avatar_chunks.jsonl.gz; then
+            echo "Snapshot unchanged; nothing to publish."
+            git checkout -- data/SNAPSHOT
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          date=$(jq -r .generated_at data/SNAPSHOT | cut -c1-10)
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/avatar_chunks.jsonl.gz data/SNAPSHOT
+          git commit -m "data: refresh wiki snapshot $date"
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  # A push made with GITHUB_TOKEN does not trigger docker.yaml on its own,
+  # so call it directly with the new commit.
+  publish:
+    needs: refresh
+    if: needs.refresh.outputs.changed == 'true'
+    uses: ./.github/workflows/docker.yaml
+    with:
+      ref: ${{ needs.refresh.outputs.sha }}
+      data_only: true
+    permissions:
+      contents: read
+      packages: write

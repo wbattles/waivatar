@@ -10,9 +10,12 @@ docker run -d \
   -v "$(pwd)/qdrant_storage:/qdrant/storage" \
   qdrant/qdrant:latest 2>/dev/null || docker start qdrant
 
-# Uncomment to re-ingest/re-embed:
+# Uncomment to load data into the local Qdrant:
+# OPENAI_API_KEY=${OPENAI_API_KEY} QDRANT_URL=http://localhost:6333 python data/embed_data.py   # load committed snapshot
+# OPENAI_API_KEY=${OPENAI_API_KEY} QDRANT_URL=http://localhost:6333 python data/sync_wiki.py    # sync with live wiki
+# Regenerate the snapshot itself (committed to the repo, refreshed monthly by CI):
 # python data/ingest_wiki.py
-# OPENAI_API_KEY=${OPENAI_API_KEY} QDRANT_URL=http://localhost:6333 python data/embed_data.py
+# Full rebuild:
 # RESET_COLLECTION=true OPENAI_API_KEY=${OPENAI_API_KEY} QDRANT_URL=http://localhost:6333 python data/embed_data.py
 
 echo "Packing .mcpb..."
