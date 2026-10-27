@@ -15,6 +15,7 @@ Env:
 """
 
 import os
+import sys
 
 from dotenv import load_dotenv
 
@@ -52,7 +53,7 @@ def main():
     if newer:
         print(f"Already newer      : {newer} chunks (kept from a previous sync)")
 
-    embedded = store.upsert_chunks(qdrant, to_load, existing)
+    embedded, failed = store.upsert_chunks(qdrant, to_load, existing)
 
     loaded_pages = {c["pageid"] for c in to_load}
     keep = {store.point_id(c["id"]) for c in to_load}
@@ -63,10 +64,16 @@ def main():
 
     print("\nDone.")
     print(f"  Embedded : {embedded}")
-    print(f"  Unchanged: {len(to_load) - embedded}")
+    print(f"  Failed   : {failed}")
+    print(f"  Unchanged: {len(to_load) - embedded - failed}")
     print(f"  Pruned   : {pruned}")
     print(f"  Total vectors in collection: {store.count(qdrant)}")
 
+    if failed:
+        print(f"\nERROR: {failed} chunks could not be embedded; exiting non-zero so the run is retried.")
+        return 1
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

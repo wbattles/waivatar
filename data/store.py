@@ -133,11 +133,13 @@ def _payload(chunk: dict) -> dict:
     }
 
 
-def upsert_chunks(qdrant: QdrantClient, chunks: list[dict], existing: dict[int, dict]) -> int:
+def upsert_chunks(qdrant: QdrantClient, chunks: list[dict], existing: dict[int, dict]) -> tuple[int, int]:
     """
     Embed and upsert chunks whose text is new or changed. Chunks whose text
     hash already matches get only their pageid/revid payload refreshed.
-    Returns the number of chunks embedded.
+    Returns (embedded, failed) chunk counts. A failed batch is logged and
+    skipped so the rest can proceed; callers must treat failed > 0 as an
+    error exit so the Job retries instead of reporting success.
     """
     to_embed: list[dict] = []
     to_touch: dict[tuple, list[int]] = {}
@@ -159,6 +161,7 @@ def upsert_chunks(qdrant: QdrantClient, chunks: list[dict], existing: dict[int, 
         )
 
     embedded = 0
+    failed = 0
     for i in range(0, len(to_embed), BATCH_SIZE):
         batch = to_embed[i : i + BATCH_SIZE]
         texts = [c["text"][:MAX_CHARS] for c in batch]
@@ -166,6 +169,7 @@ def upsert_chunks(qdrant: QdrantClient, chunks: list[dict], existing: dict[int, 
             vectors = embed_batch(texts)
         except Exception as e:
             print(f"  ERROR embedding batch at {i}: {e}")
+            failed += len(batch)
             time.sleep(5)
             continue
         qdrant.upsert(
@@ -178,7 +182,7 @@ def upsert_chunks(qdrant: QdrantClient, chunks: list[dict], existing: dict[int, 
         embedded += len(batch)
         print(f"  [{embedded}/{len(to_embed)}] embedded and stored")
 
-    return embedded
+    return embedded, failed
 
 
 def delete_points(qdrant: QdrantClient, ids: list[int]) -> None:

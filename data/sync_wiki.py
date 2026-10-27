@@ -59,6 +59,7 @@ def main() -> int:
             keep |= entry["ids"]
 
     embedded = 0
+    failed = 0
     dropped_pages = 0
     for i, batch in enumerate(wiki.batched(sorted(changed), wiki.CONTENT_BATCH), 1):
         fetched = wiki.fetch_wikitext(batch)
@@ -68,7 +69,9 @@ def main() -> int:
             if not chunks:
                 dropped_pages += 1
                 continue
-            embedded += store.upsert_chunks(qdrant, chunks, existing)
+            done, bad = store.upsert_chunks(qdrant, chunks, existing)
+            embedded += done
+            failed += bad
             keep |= {store.point_id(c["id"]) for c in chunks}
         print(f"  [{min(i * wiki.CONTENT_BATCH, len(changed))}/{len(changed)}] pages refetched")
         time.sleep(wiki.REQUEST_DELAY)
@@ -79,8 +82,14 @@ def main() -> int:
     print(f"  Pages refetched : {len(changed)}")
     print(f"  Pages dropped   : {dropped_pages + len(removed)}")
     print(f"  Chunks embedded : {embedded}")
+    print(f"  Chunks failed   : {failed}")
     print(f"  Points pruned   : {pruned}")
     print(f"  Total vectors in collection: {store.count(qdrant)}")
+
+    if failed:
+        print(f"\nERROR: {failed} chunks could not be embedded; exiting non-zero. "
+              "Affected pages keep their old revision and are refetched next run.")
+        return 1
     return 0
 
 
